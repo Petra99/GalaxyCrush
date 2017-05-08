@@ -10,186 +10,152 @@ public class Logic {
 
 	private GameBoard board;
 
-	private int currX;
-	private int currY;
+	private Point firstClick;
 	private int score;
 
 	// mouseclicks
 
 	public Logic(GameBoard board) {
-
-		this.currX = -1;
-		this.currY = -1;
-
 		this.board = board;
+		modifyBoard();
 	}
 
 	public void play(int x, int y) {
-		if (this.currX == -1 && this.currY == -1) {
-			this.currX = x;
-			this.currY = y;
+		board.print();
+		if (firstClick == null) {
+			firstClick = new Point(x, y);
 		} else {
-			if (isMoveLegal(currX, currY, x, y)) {
-				swapElements(currX, currY, x, y);
-				modifyBoard(currX, currY, x, y);
+			if (isMoveLegal(firstClick.x, firstClick.y, x, y)) {
+				swapElements(firstClick.x, firstClick.y, x, y);
+				System.out.println("SWAPPED:");
+				board.print();
+				modifyBoardOrUnswap(firstClick.x, firstClick.y, x, y);
+				modifyBoard();
 			}
-			currX = -1;
-			currY = -1;
+			firstClick = null;
 		}
-
+	}
+	
+	private boolean isMoveLegal(int firstX, int firstY, int secondX, int secondY) {
+		if (Math.abs(firstX - secondX) == 1) {
+			if (firstY == secondY) {
+				return true;
+			}
+		} else if (Math.abs(firstY - secondY) == 1) {
+			if (firstX == secondX) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void swapElements(int firstX, int firstY, int secondX, int secondY) {
+		Figure firstFigure = board.getPlanetAt(firstX, firstY);
+		Figure secondFigure = board.getPlanetAt(secondX, secondY);
+		board.setPlanetAt(firstX, firstY, secondFigure);
+		board.setPlanetAt(secondX, secondY, firstFigure);
 	}
 
-	private void modifyBoard(int currX, int currY, int x, int y) {
-
+	private void modifyBoardOrUnswap(int currX, int currY, int x, int y) {
 		ArrayList<Point> rightMatchFigures = getRightMatches();
-
 		ArrayList<Point> downMatchFigures = getDownMatches();
-
 		ArrayList<Point> combinedFigures = new ArrayList<Point>();
 		
 		combinedFigures.addAll(rightMatchFigures);
-		
 		combinedFigures.addAll(downMatchFigures);
-		
 
 		refillBoardOrSwapBack(combinedFigures, currX, currY, x, y);
-
-		
 	}
 
+	private void modifyBoard() {
+		ArrayList<Point> rightMatchFigures = getRightMatches();
+		ArrayList<Point> downMatchFigures = getDownMatches();
+		ArrayList<Point> combinedFigures = new ArrayList<Point>();
+		
+		combinedFigures.addAll(rightMatchFigures);
+		combinedFigures.addAll(downMatchFigures);
+
+		if(combinedFigures.size() > 0) {
+			refillBoard(combinedFigures);
+			modifyBoard();
+		}
+	}
+	
 	private void refillBoardOrSwapBack(ArrayList<Point> coordinateList, int currX, int currY, int x, int y) {
 		if (coordinateList.size() > 0) {
-			clearMatches(coordinateList);
-			board.reorder();
-			board.refill();
+			refillBoard(coordinateList);
 		} else {
-			// if no matches found, unswa
+			// if no matches found, unswap
 			swapElements(x, y, currX, currY);
 		}
-
 	}
 
-	private void clearMatches(ArrayList<Point> rightMatchFigures) {
+	private void refillBoard(ArrayList<Point> coordinateList) {
+		makeEmpty(coordinateList);
+		board.print();
+		board.reorder();
+		board.print();
+		board.refill();
+	}
+	
+	
+
+	private void makeEmpty(ArrayList<Point> rightMatchFigures) {
 		// for each (collections)
 		for (Point figureCoordinates : rightMatchFigures) {
 			board.setPlanetAt(figureCoordinates.x, figureCoordinates.y, null);
 		}
-
-	}
-
-	private boolean checkIfDownMatch(int x, int y) {
-
-		int counter = 1;
-		while (x < 5 && board.getPlanetAt(x, y).getType() == board.getPlanetAt(x + 1, y).getType()) {
-			counter++;
-			x++;
-		}
-		if (checkCounter(counter)) {
-			getScore(counter);
-			for (int row = x; row < x + counter - 1; row++) {
-				board.setPlanetAt(row, y, null);
-			}
-			return true;
-		} else {
-			return false;
-		}
-
-	}
-
-	private boolean checkIfUpMatch(int x, int y) {
-		ArrayList<Figure> upCheckList = new ArrayList<Figure>();
-		// lokalen spisuk za suvpadeniqta ako duljinata e po golqma ot 3 gi
-		// dobavqm kum gorniq spisuk
-		// int counter = 0;
-		while (x > 0 && board.getPlanetAt(x, y).getType() == board.getPlanetAt(x - 1, y).getType()) {
-			x--;
-			upCheckList.add(board.getPlanetAt(x, y));
-		}
-		// if (checkCounter(counter)) {
-		int upCheckListSize = upCheckList.size();
-		if (upCheckListSize >= 3) {
-			getScore(upCheckListSize);
-			// for (int row = x - upCheckListSize + 1; row < x; row++) {
-			// board.setPlanetAt(row, y, null);
-			// }
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkIfLeftMatch(int x, int y) {
-		int counter = 0;
-		while (y > 0 && board.getPlanetAt(x, y).getType() == board.getPlanetAt(x, y - 1).getType()) {
-			y--;
-			counter++;
-		}
-		if (checkCounter(counter)) {
-			getScore(counter);
-			for (int col = y - counter + 1; col < y; col++) {
-				board.setPlanetAt(x, col, null);
-			}
-			return true;
-		}
-		return false;
 	}
 
 	private ArrayList<Point> getRightMatches() {
-
 		ArrayList<Point> matchedFigures = new ArrayList<>();
-
-		for (int y = 0; y < 5; y++) {
+		for (int y = 0; y < GameBoard.getBoard_height(); y++) {
 			int counter = 0;
-			for (int x = 0; x < 5; x++) {
+			for (int x = 0; x < GameBoard.getBoard_width() - 1; x++) {
 				if (board.getPlanetAt(x, y).getType() == board.getPlanetAt(x + 1, y).getType()) {
 					counter++;
 				} else {
 					if (counter >= 2) {
-						for (int i = x - counter; i <= x; i++) {
-							matchedFigures.add(new Point(i, y));
-						}
+						matchedFigures.addAll(generateListWithRange(x - counter, x + 1, y));
 					}
 					counter = 0;
 				}
-
+				
+				//if the matches are at the end of the row
+				if(x == GameBoard.getBoard_width() - 2 && counter >= 2) {
+					matchedFigures.addAll(generateListWithRange(x - counter + 1, x + 2, y));
+				}
 			}
 		}
-
 		return matchedFigures;
-		// while (y < 5 && board.getPlanetAt(x, y).getType() ==
-		// board.getPlanetAt(x, y + 1).getType()) {
-		// y++;
-		// counter++;
-		// }
-		// if (checkCounter(counter)) {
-		// getScore(counter);
-		// for (int col = y - counter + 1; col < y; col++) {
-		// board.setPlanetAt(x, col, null);
-		// }
-		// return true;
-		// }
-		// return false;
+	}
+
+	private ArrayList<Point> generateListWithRange(int startX, int endX, int y) {
+		ArrayList<Point> generatedList = new ArrayList<>();
+		for (int i = startX; i < endX; i++) {
+			System.out.println("CLEARED: (" + i + ", " + y + ")");
+			generatedList.add(new Point(i, y));
+		}
+		return generatedList;
 	}
 
 	private ArrayList<Point> getDownMatches() {
-
 		ArrayList<Point> matchedFigures = new ArrayList<>();
-
-		for (int y = 0; y < 5; y++) {
-			int counter = 0;
-			for (int x = 0; x < 5; x++) {
-				if (board.getPlanetAt(x, y).getType() == board.getPlanetAt(x, y + 1).getType()) {
-					counter++;
-				} else {
-					if (counter >= 2) {
-						for (int i = x - counter; i <= x; i++) {
-							matchedFigures.add(new Point(i, y));
-						}
-					}
-					counter = 0;
-				}
-
-			}
-		}
+//		for (int y = 0; y < GameBoard.getBoard_height() ; y++) {
+//			int counter = 0;
+//			for (int x = 0; x < GameBoard.getBoard_width(); x++) {
+//				if (board.getPlanetAt(x, y).getType() == board.getPlanetAt(x, y + 1).getType()) {
+//					counter++;
+//				} else {
+//					if (counter >= 2) {
+//						for (int i = x - counter; i <= x; i++) {
+//							matchedFigures.add(new Point(i, y));
+//						}
+//					}
+//					counter = 0;
+//				}
+//			}
+//		}
 		return matchedFigures;
 	}
 
@@ -199,21 +165,6 @@ public class Logic {
 		} else {
 			return false;
 		}
-
-	}
-
-	private static boolean isMoveLegal(int currx, int curry, int x, int y) {
-		if (Math.abs(currx - x) == 1) {
-			if (curry == y) {
-				return true;
-			}
-		} else if (Math.abs(curry - y) == 1) {
-			if (currx == x) {
-				return true;
-			}
-		}
-		return false;
-
 	}
 
 	public int getScore(int counter) {
@@ -222,23 +173,15 @@ public class Logic {
 		return score;
 	}
 
-	public static void checkStartBoard(GameBoard board) {
-		for (int x = 1; x < GameBoard.getBoard_height(); x++) {
-			for (int y = 0; y < GameBoard.getBoard_width(); y++) {
-				if (board.getPlanetAt(x, y).getType() == board.getPlanetAt(x - 1, y).getType()) {
-
-				}
-			}
-		}
-
-	}
-
-	public void swapElements(int currX, int currY, int x, int y) {
-		Figure currFigure = board.getPlanetAt(currX, currY);
-		Figure nextFigure = board.getPlanetAt(x, y);
-		board.setPlanetAt(currX, currY, nextFigure);
-		board.setPlanetAt(x, y, currFigure);
-
-	}
+//	public static void checkStartBoard(GameBoard board) {
+//		for (int x = 1; x < GameBoard.getBoard_height(); x++) {
+//			for (int y = 0; y < GameBoard.getBoard_width(); y++) {
+//				if (board.getPlanetAt(x, y).getType() == board.getPlanetAt(x - 1, y).getType()) {
+//
+//				}
+//			}
+//		}
+//
+//	}
 
 }

@@ -15,11 +15,12 @@ public class Manager {
 		@Override
 		public void onButtonClicked(int x, int y) {
 			logic.play(x, y);
+			board.updateBoard();
 		}
 	};
 
 	public void runGame() {
-		board.runBoard(board);
+		board.runBoard();
 		window.setListener(listener);
 	}
 

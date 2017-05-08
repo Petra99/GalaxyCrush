@@ -37,25 +37,15 @@ public class GameWindow {
 	}
 
 	private void getComponentsOfTheWindow() {
-
 		prepareFrame();
-
 		preparePanelBoard();
-
 		prepareTitleLabel();
-
 		prepareStartButton();
-
 		prepareScorePanel();
-
 		prepareScoreLabel();
-
 		prepareTimePanel();
-
 		prepareTimeLabel();
-
 		prepareBackground();
-
 	}
 
 	private void prepareBackground() {
@@ -163,7 +153,7 @@ public class GameWindow {
 		panelBoard = new JPanel();
 		panelBoard.setBounds(27, 140, 400, 400);
 		frame.getContentPane().add(panelBoard);
-		panelBoard.setLayout(new GridLayout(0, 6, 0, 0));
+		panelBoard.setLayout(new GridLayout(GameBoard.getBoard_height(), GameBoard.getBoard_width(), 0, 0));
 		panelBoard.setBackground(new Color(0, 0, 0, 64));
 		panelBoard.setBorder(BorderFactory.createLineBorder(Color.black));
 		panelBoard.setVisible(false);
@@ -179,9 +169,9 @@ public class GameWindow {
 	// new
 
 	public void setBoard(GameBoard board) {
-		buttons = new JButton[GameBoard.getBoard_height()][GameBoard.getBoard_width()];
-		for (int x = 0; x < GameBoard.getBoard_height(); x++) {
-			for (int y = 0; y < GameBoard.getBoard_width(); y++) {
+		buttons = new JButton[GameBoard.getBoard_width()][GameBoard.getBoard_height()];
+		for (int y = 0; y < GameBoard.getBoard_height(); y++) {
+			for (int x = 0; x < GameBoard.getBoard_width(); x++) {
 				prepareButtonOnBoard(board.getPlanetAt(x, y), x, y);
 			}
 		}
